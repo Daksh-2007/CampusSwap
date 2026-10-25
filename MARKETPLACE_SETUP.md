@@ -66,9 +66,10 @@ The UUID is the user ID shown after login. Replace the placeholder with the veri
 
 - `GET /api/health` — health check.
 - `GET /api/products` — public active listings; optional query parameters: `category`, `listing_type=buy|rent|both`, `search`, `sort=created_at|sale_price|rent_price_per_day|title`, `order=asc|desc`, `limit`, `page`.
+- `GET /api/products/seller/me` — authenticated seller's listings (both active and inactive); accepts optional `status=active|inactive`, `category`, `listing_type`, `search`, `sort`, `order`, `limit`, `page`.
 - `GET /api/products/:id` — public detail for an active product.
 - `POST /api/products` — seller-only create; accepts JSON or multipart form data, with optional repeated `images` file fields (max 5 images, 5 MB each).
-- `PATCH /api/products/:id` — seller-only update; accepts JSON or multipart form data with optional `images`.
+- `PATCH /api/products/:id` — seller-only update; accepts JSON or multipart form data with optional `images`. Supports toggling status (`active` or `inactive`).
 - `DELETE /api/products/:id` — seller-only soft-deactivation (`status=inactive`).
 
 `POST` and `PATCH` derive ownership from the verified token and reject a client-provided `seller_id`. Valid listing types are `buy`, `rent`, and `both`; valid item conditions are `new`, `like_new`, `good`, and `fair`. The listing must include a sale price for `buy`/`both`, and a daily rent price for `rent`/`both`.

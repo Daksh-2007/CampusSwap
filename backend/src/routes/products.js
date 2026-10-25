@@ -157,6 +157,99 @@ async function uploadProductImages(client, productId, files, startingSortOrder =
   }
 }
 
+// GET /api/products/seller/me — authenticated seller's own listings (including active & inactive).
+router.get('/seller/me', requireAuth, requireSeller, async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    const {
+      status,
+      category,
+      listing_type: listingType,
+      search,
+      sort = 'created_at',
+      order = 'desc',
+      limit = '100',
+      page = '1'
+    } = req.query;
+
+    if (listingType && !VALID_LISTING_TYPES.has(String(listingType).toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "listing_type must be 'buy', 'rent', or 'both'"
+      });
+    }
+
+    if (status && !VALID_STATUSES.has(String(status).toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "status must be 'active' or 'inactive'"
+      });
+    }
+
+    const validSortColumns = new Set(['created_at', 'sale_price', 'rent_price_per_day', 'title', 'updated_at']);
+    const sortColumn = validSortColumns.has(String(sort)) ? String(sort) : 'created_at';
+    const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 100, 1), 200);
+    const safePage = Math.max(Number.parseInt(page, 10) || 1, 1);
+    const from = (safePage - 1) * safeLimit;
+    const to = from + safeLimit - 1;
+
+    // Use caller's scoped Supabase client (enforces RLS where seller can see their own active & inactive listings)
+    const client = req.supabase || getSupabaseClient();
+    let query = client
+      .from('products')
+      .select(`
+        id, seller_id, title, description, category, item_condition,
+        listing_type, sale_price, rent_price_per_day, pickup_address,
+        status, created_at, updated_at,
+        product_images ( id, storage_path, sort_order, created_at )
+      `)
+      .eq('seller_id', sellerId);
+
+    if (status) {
+      query = query.eq('status', String(status).toLowerCase().trim());
+    }
+
+    if (typeof category === 'string' && category.trim()) {
+      query = query.ilike('category', `%${category.trim()}%`);
+    }
+
+    if (listingType) {
+      const type = String(listingType).toLowerCase();
+      query = type === 'buy'
+        ? query.in('listing_type', ['buy', 'both'])
+        : type === 'rent'
+          ? query.in('listing_type', ['rent', 'both'])
+          : query.eq('listing_type', 'both');
+    }
+
+    if (typeof search === 'string' && search.trim()) {
+      query = query.ilike('title', `%${search.trim()}%`);
+    }
+
+    const { data, error } = await query
+      .order(sortColumn, { ascending: String(order).toLowerCase() === 'asc' })
+      .range(from, to);
+
+    if (error) return sendDbError(res, 'Retrieving seller listings', error);
+
+    const products = (data || []).map((product) => ({
+      ...product,
+      product_images: attachPublicUrls(product.product_images || [])
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      page: safePage,
+      limit: safeLimit,
+      data: products
+    });
+  } catch (error) {
+    console.error('Unexpected seller products list error:', error.message || 'unknown_error');
+    return res.status(500).json({ success: false, message: 'Failed to retrieve seller listings' });
+  }
+});
+
 // GET /api/products — public list of active products.
 router.get('/', async (req, res) => {
   try {
@@ -461,10 +554,12 @@ router.patch('/:id', requireAuth, requireSeller, upload.array('images', 5), asyn
   }
 });
 
-// DELETE /api/products/:id — soft-deactivate a seller's own listing.
+// DELETE /api/products/:id — deactivates listing (default) or permanently removes it (?permanent=true).
 router.delete('/:id', requireAuth, requireSeller, async (req, res) => {
   const { id } = req.params;
   const sellerId = req.user.id;
+  const isPermanent = req.query.permanent === 'true' || req.query.permanent === '1';
+
   if (!UUID_REGEX.test(id)) {
     return res.status(400).json({ success: false, message: 'Invalid product ID format' });
   }
@@ -473,16 +568,50 @@ router.delete('/:id', requireAuth, requireSeller, async (req, res) => {
     const client = req.supabase;
     const { data: existing, error: fetchError } = await client
       .from('products')
-      .select('id, seller_id')
+      .select('id, seller_id, title')
       .eq('id', id)
       .maybeSingle();
 
     if (fetchError) return sendDbError(res, 'Verifying product ownership', fetchError);
     if (!existing) return res.status(404).json({ success: false, message: 'Product not found' });
     if (existing.seller_id !== sellerId) {
-      return res.status(403).json({ success: false, message: 'You can only deactivate your own listings' });
+      return res.status(403).json({ success: false, message: 'You can only modify or remove your own listings' });
     }
 
+    if (isPermanent) {
+      // 1. Retrieve images so we can clean up Supabase storage files if any
+      const { data: images } = await client
+        .from('product_images')
+        .select('storage_path')
+        .eq('product_id', id);
+
+      // 2. Delete product record (cascading deletes product_images in DB under foreign key)
+      const { error: deleteError } = await client
+        .from('products')
+        .delete()
+        .eq('id', id)
+        .eq('seller_id', sellerId);
+
+      if (deleteError) return sendDbError(res, 'Removing product listing', deleteError);
+
+      // 3. Best-effort storage cleanup
+      if (images && images.length > 0) {
+        const storagePaths = images.map(img => img.storage_path).filter(Boolean);
+        if (storagePaths.length > 0) {
+          await client.storage.from(STORAGE_BUCKET).remove(storagePaths).catch(err => {
+            console.error('Storage image cleanup error:', err.message || err);
+          });
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Product listing permanently removed successfully',
+        data: { id, title: existing.title, removed: true }
+      });
+    }
+
+    // Default: Soft deactivation
     const { data: product, error } = await client
       .from('products')
       .update({ status: 'inactive', updated_at: new Date().toISOString() })
@@ -498,8 +627,8 @@ router.delete('/:id', requireAuth, requireSeller, async (req, res) => {
       data: product
     });
   } catch (error) {
-    console.error('Unexpected product deactivation error:', error.message || 'unknown_error');
-    return res.status(500).json({ success: false, message: 'Failed to deactivate product listing' });
+    console.error('Unexpected product deletion error:', error.message || 'unknown_error');
+    return res.status(500).json({ success: false, message: 'Failed to process product deletion' });
   }
 });
 

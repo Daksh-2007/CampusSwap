@@ -51,4 +51,5 @@ server.listen(PORT, () => {
   console.log(`- Registration: http://localhost:${PORT}/register.html`);
   console.log(`- Login:        http://localhost:${PORT}/login.html`);
   console.log(`- Hub:          http://localhost:${PORT}/index.html`);
+  console.log(`- Dashboard:    http://localhost:${PORT}/seller-dashboard.html`);
 });

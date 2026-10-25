@@ -4,8 +4,13 @@
  */
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:5000/api';
-const TOKEN_KEY = 'campus_swap_access_token';
+const API_BASE_URL = window.CAMPUS_SWAP_API_URL || 'http://localhost:5000/api';
+const TOKEN_KEY = 'campus_swap_token';
+const LEGACY_TOKEN_KEY = 'campus_swap_access_token';
+
+function getStoredToken() {
+  return sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(LEGACY_TOKEN_KEY);
+}
 
 // Email validation regular expression
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -274,7 +279,7 @@ function initLoginPage() {
   const logoutBtn = document.getElementById('logoutBtn');
 
   // Check if session token already exists in sessionStorage on load
-  const existingToken = sessionStorage.getItem(TOKEN_KEY);
+  const existingToken = getStoredToken();
   if (existingToken) {
     loadExistingSession(existingToken);
   }
@@ -289,6 +294,7 @@ function initLoginPage() {
     } else {
       // Token invalid or expired
       sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(LEGACY_TOKEN_KEY);
       clearAlert(alertEl);
       showLoginForm();
     }
@@ -310,6 +316,7 @@ function initLoginPage() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(LEGACY_TOKEN_KEY);
       showLoginForm();
       showAlert(alertEl, 'You have been signed out successfully.', 'info');
     });

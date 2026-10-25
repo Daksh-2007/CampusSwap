@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Dashboard - CampusSwap</title>
+  <meta name="description" content="Manage your campus listings, create new products, upload images, update prices, and view sales performance on CampusSwap.">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- CampusSwap Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/seller-dashboard.css">
+</head>
+<body class="bg-dark text-light">
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark dashboard-nav sticky-top py-3">
+    <div class="container-fluid dashboard-container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+        <div class="brand-badge" style="width: 38px; height: 38px; font-size: 1.2rem;">
+          <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <span class="fw-bold tracking-tight text-white fs-5">Campus<span class="text-primary">Swap</span></span>
+        <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 ms-1">Seller Studio</span>
+      </a>
+
+      <!-- Navbar Toggle for Mobile -->
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardNavbar" aria-controls="dashboardNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="dashboardNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <li class="nav-item">
+            <a class="nav-link active" href="seller-dashboard.html"><i class="bi bi-grid me-1"></i> Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="index.html"><i class="bi bi-shop me-1"></i> Marketplace Hub</a>
+          </li>
+        </ul>
+
+        <!-- User Profile & Action Tools -->
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-none d-sm-block text-end">
+            <div id="sellerNameDisplay" class="fw-semibold text-white small">Loading profile...</div>
+            <div id="sellerEmailDisplay" class="text-secondary" style="font-size: 0.75rem;">...</div>
+          </div>
+          <button type="button" class="btn btn-outline-danger btn-sm" id="logoutBtn" title="Sign out">
+            <i class="bi bi-box-arrow-right me-1"></i>Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Dashboard Container -->
+  <main class="dashboard-container py-4 px-3 px-md-4" id="mainDashboard">
+
+    <!-- Global Dashboard Alert -->
+    <div id="dashboardAlert" class="alert d-none" role="alert" aria-live="polite"></div>
+
+    <!-- Page Header & Action Button -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <div>
+        <h1 class="h3 fw-bold text-white mb-1">Seller Management Dashboard</h1>
+        <p class="text-secondary small mb-0">Monitor your inventory, manage active campus listings, and publish new products.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm px-3" id="refreshListingsBtn" title="Refresh Listings">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+        </button>
+        <button type="button" class="btn btn-primary px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#createProductModal" id="newListingBtn">
+          <i class="bi bi-plus-circle me-1"></i>Create New Listing
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Metrics Row -->
+    <div class="row g-3 mb-4" id="statsRow">
+      <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-secondary small fw-medium">Total Listings</span>
+            <div class="stat-icon bg-primary bg-opacity-25 text-primary">
+              <i class="bi bi-collection"></i>
+            </div>
+          </div>
+          <h2 class="h3 fw-bold text-white mb-0" id="statTotalListings">0</h2>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-secondary small fw-medium">Active</span>
+            <div class="stat-icon bg-success bg-opacity-25 text-success">
+              <i class="bi bi-check-circle"></i>
+            </div>
+          </div>
+          <h2 class="h3 fw-bold text-white mb-0" id="statActiveListings">0</h2>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-secondary small fw-medium">Inactive</span>
+            <div class="stat-icon bg-danger bg-opacity-25 text-danger">
+              <i class="bi bi-eye-slash"></i>
+            </div>
+          </div>
+          <h2 class="h3 fw-bold text-white mb-0" id="statInactiveListings">0</h2>
+        </div>
+      </div>
+      <div class="col-6 col-md-6 col-xl">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-secondary small fw-medium">Direct Sale</span>
+            <div class="stat-icon bg-info bg-opacity-25 text-info">
+              <i class="bi bi-tag"></i>
+            </div>
+          </div>
+          <h2 class="h3 fw-bold text-white mb-0" id="statForSale">0</h2>
+        </div>
+      </div>
+      <div class="col-6 col-md-6 col-xl">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-secondary small fw-medium">Rentals</span>
+            <div class="stat-icon bg-warning bg-opacity-25 text-warning">
+              <i class="bi bi-clock-history"></i>
+            </div>
+          </div>
+          <h2 class="h3 fw-bold text-white mb-0" id="statForRent">0</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Content Area -->
+    <div id="dashboardContent" class="glass-card p-3 p-md-4">
+      
+      <!-- Section Header -->
+      <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom border-secondary border-opacity-25">
+        <div class="d-flex align-items-center gap-2">
+          <h2 class="h5 fw-bold text-white mb-0">Your Product Listings</h2>
+          <span class="badge bg-secondary bg-opacity-50 text-light" id="listingsCountBadge">0 items</span>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingSpinner" class="text-center py-5 d-none">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Loading listings...</span>
+        </div>
+        <p class="text-secondary mt-3 small">Fetching your marketplace listings...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="text-center py-5 d-none">
+        <div class="stat-icon bg-secondary bg-opacity-25 text-secondary mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.75rem;">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <h3 class="h5 fw-semibold text-white mb-1">No listings found</h3>
+        <p class="text-secondary small mb-3">You haven't listed any items on CampusSwap yet. Start earning by creating your first listing!</p>
+        <button type="button" class="btn btn-primary btn-sm px-4" data-bs-toggle="modal" data-bs-target="#createProductModal">
+          <i class="bi bi-plus-lg me-1"></i>Create Listing
+        </button>
+      </div>
+
+      <!-- Listings Table -->
+      <div id="productsTableContainer" class="table-responsive d-none">
+        <table class="table table-glass align-middle mb-0" id="productsTable">
+          <thead>
+            <tr>
+              <th scope="col" style="min-width: 250px;">Item Details</th>
+              <th scope="col" style="min-width: 130px;">Price / Model</th>
+              <th scope="col" style="min-width: 100px;">Status</th>
+              <th scope="col" style="min-width: 120px;">Created On</th>
+              <th scope="col" class="text-end" style="min-width: 150px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- MODAL: CREATE LISTING (POST /api/products)                      -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="createProductModal" tabindex="-1" aria-labelledby="createProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content glass-modal text-light">
+        <div class="modal-header">
+          <h2 class="modal-title h5 fw-bold text-white d-flex align-items-center gap-2 mb-0" id="createProductModalLabel">
+            <i class="bi bi-plus-square text-primary"></i> Create New Listing
+          </h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="createProductForm" enctype="multipart/form-data" novalidate>
+          <div class="modal-body p-4">
+            
+            <div id="createModalAlert" class="alert d-none mb-3" role="alert"></div>
+
+            <div class="row g-3">
+              <!-- Title -->
+              <div class="col-12">
+                <label for="createTitle" class="form-label">Listing Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="createTitle" name="title" placeholder="e.g. Engineering Mechanics 5th Edition" maxlength="200" required>
+              </div>
+
+              <!-- Category -->
+              <div class="col-md-6">
+                <label for="createCategory" class="form-label">Category <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="createCategory" name="category" placeholder="e.g. Books, Electronics, Lab Gear" maxlength="100" required list="categorySuggestions">
+                <datalist id="categorySuggestions">
+                  <option value="Books">
+                  <option value="Electronics">
+                  <option value="Lab Equipment">
+                  <option value="Calculators">
+                  <option value="Stationery">
+                  <option value="Furniture">
+                  <option value="Bicycles">
+                  <option value="Dorm Accessories">
+                </datalist>
+              </div>
+
+              <!-- Condition -->
+              <div class="col-md-6">
+                <label for="createCondition" class="form-label">Item Condition <span class="text-danger">*</span></label>
+                <select class="form-select bg-dark text-light border-secondary" id="createCondition" name="item_condition" required>
+                  <option value="good" selected>Good (Normal campus use)</option>
+                  <option value="new">Brand New (Unopened / unused)</option>
+                  <option value="like_new">Like New (Barely used)</option>
+                  <option value="fair">Fair (Usable with cosmetic wear)</option>
+                </select>
+              </div>
+
+              <!-- Listing Type -->
+              <div class="col-12">
+                <label for="createListingType" class="form-label">Listing Availability Type <span class="text-danger">*</span></label>
+                <select class="form-select bg-dark text-light border-secondary" id="createListingType" name="listing_type" required>
+                  <option value="buy" selected>Direct Sale Only</option>
+                  <option value="rent">Daily Rental Only</option>
+                  <option value="both">Both Sale & Daily Rental</option>
+                </select>
+              </div>
+
+              <!-- Sale Price -->
+              <div class="col-md-6" id="createSalePriceGroup">
+                <label for="createSalePrice" class="form-label">Sale Price (₹) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-dark border-secondary text-secondary">₹</span>
+                  <input type="number" step="0.01" min="0" class="form-control" id="createSalePrice" name="sale_price" placeholder="450">
+                </div>
+              </div>
+
+              <!-- Rental Price -->
+              <div class="col-md-6" id="createRentPriceGroup" style="display: none;">
+                <label for="createRentPrice" class="form-label">Daily Rental Rate (₹/day) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-dark border-secondary text-secondary">₹</span>
+                  <input type="number" step="0.01" min="0" class="form-control" id="createRentPrice" name="rent_price_per_day" placeholder="25">
+                </div>
+              </div>
+
+              <!-- Pickup Address / Location -->
+              <div class="col-12">
+                <label for="createPickupAddress" class="form-label">Campus Pickup Location</label>
+                <input type="text" class="form-control" id="createPickupAddress" name="pickup_address" placeholder="e.g. North Gate Library or Hostel Block B" maxlength="500">
+                <div class="form-text text-secondary">Where the buyer can meet you safely on campus.</div>
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label for="createDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="createDescription" name="description" rows="3" placeholder="Provide any details about edition, condition, marks, or accessories..." maxlength="5000"></textarea>
+              </div>
+
+              <!-- Image Upload -->
+              <div class="col-12">
+                <label for="createImages" class="form-label">Product Images (Up to 5 images, max 5MB each)</label>
+                <input type="file" class="form-control bg-dark text-light border-secondary" id="createImages" name="images" multiple accept="image/png, image/jpeg, image/webp, image/gif">
+                <div class="form-text text-secondary">Supports JPG, PNG, WEBP, and GIF files.</div>
+                <div id="createImagePreviews" class="mt-2"></div>
+              </div>
+
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="createSubmitBtn">
+              <span class="spinner-border spinner-border-sm me-1 d-none" id="createSpinner" role="status" aria-hidden="true"></span>
+              <span class="btn-label">Create Listing</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL: EDIT LISTING (PATCH /api/products/:id)                   -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content glass-modal text-light">
+        <div class="modal-header">
+          <h2 class="modal-title h5 fw-bold text-white d-flex align-items-center gap-2 mb-0" id="editProductModalLabel">
+            <i class="bi bi-pencil-square text-primary"></i> Edit Listing
+          </h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="editProductForm" enctype="multipart/form-data" novalidate>
+          <input type="hidden" id="editProductId" name="product_id">
+          
+          <div class="modal-body p-4">
+            
+            <div id="editModalAlert" class="alert d-none mb-3" role="alert"></div>
+
+            <div class="row g-3">
+              <!-- Title -->
+              <div class="col-12">
+                <label for="editTitle" class="form-label">Listing Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="editTitle" name="title" maxlength="200" required>
+              </div>
+
+              <!-- Category -->
+              <div class="col-md-6">
+                <label for="editCategory" class="form-label">Category <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="editCategory" name="category" maxlength="100" required list="categorySuggestions">
+              </div>
+
+              <!-- Condition -->
+              <div class="col-md-6">
+                <label for="editCondition" class="form-label">Item Condition <span class="text-danger">*</span></label>
+                <select class="form-select bg-dark text-light border-secondary" id="editCondition" name="item_condition" required>
+                  <option value="good">Good (Normal campus use)</option>
+                  <option value="new">Brand New (Unopened / unused)</option>
+                  <option value="like_new">Like New (Barely used)</option>
+                  <option value="fair">Fair (Usable with cosmetic wear)</option>
+                </select>
+              </div>
+
+              <!-- Listing Type -->
+              <div class="col-md-6">
+                <label for="editListingType" class="form-label">Listing Type <span class="text-danger">*</span></label>
+                <select class="form-select bg-dark text-light border-secondary" id="editListingType" name="listing_type" required>
+                  <option value="buy">Direct Sale Only</option>
+                  <option value="rent">Daily Rental Only</option>
+                  <option value="both">Both Sale & Daily Rental</option>
+                </select>
+              </div>
+
+              <!-- Status -->
+              <div class="col-md-6">
+                <label for="editStatus" class="form-label">Listing Status <span class="text-danger">*</span></label>
+                <select class="form-select bg-dark text-light border-secondary" id="editStatus" name="status" required>
+                  <option value="active">Active (Visible in Marketplace)</option>
+                  <option value="inactive">Inactive (Hidden from Buyers)</option>
+                </select>
+              </div>
+
+              <!-- Sale Price -->
+              <div class="col-md-6" id="editSalePriceGroup">
+                <label for="editSalePrice" class="form-label">Sale Price (₹) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-dark border-secondary text-secondary">₹</span>
+                  <input type="number" step="0.01" min="0" class="form-control" id="editSalePrice" name="sale_price">
+                </div>
+              </div>
+
+              <!-- Rental Price -->
+              <div class="col-md-6" id="editRentPriceGroup" style="display: none;">
+                <label for="editRentPrice" class="form-label">Daily Rental Rate (₹/day) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-dark border-secondary text-secondary">₹</span>
+                  <input type="number" step="0.01" min="0" class="form-control" id="editRentPrice" name="rent_price_per_day">
+                </div>
+              </div>
+
+              <!-- Pickup Address -->
+              <div class="col-12">
+                <label for="editPickupAddress" class="form-label">Campus Pickup Location</label>
+                <input type="text" class="form-control" id="editPickupAddress" name="pickup_address" maxlength="500">
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label for="editDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="editDescription" name="description" rows="3" maxlength="5000"></textarea>
+              </div>
+
+              <!-- Current Images -->
+              <div class="col-12">
+                <label class="form-label text-white">Current Images</label>
+                <div id="editExistingImages" class="d-flex flex-wrap gap-2 mb-2"></div>
+              </div>
+
+              <!-- Add More Images -->
+              <div class="col-12">
+                <label for="editImages" class="form-label">Upload Additional Images</label>
+                <input type="file" class="form-control bg-dark text-light border-secondary" id="editImages" name="images" multiple accept="image/png, image/jpeg, image/webp, image/gif">
+                <div class="form-text text-secondary">A listing can hold up to 5 images total.</div>
+                <div id="editImagePreviews" class="mt-2"></div>
+              </div>
+
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="editSubmitBtn">
+              <span class="spinner-border spinner-border-sm me-1 d-none" id="editSpinner" role="status" aria-hidden="true"></span>
+              <span class="btn-label">Save Changes</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL: CONFIRM DEACTIVATION (DELETE /api/products/:id)         -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-modal text-light">
+        <div class="modal-header">
+          <h2 class="modal-title h5 fw-bold text-danger d-flex align-items-center gap-2 mb-0" id="deleteProductModalLabel">
+            <i class="bi bi-exclamation-triangle-fill"></i> Deactivate Listing
+          </h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="deleteModalAlert" class="alert d-none mb-3" role="alert"></div>
+          <p class="mb-2">Are you sure you want to deactivate <strong id="deleteProductTitleDisplay" class="text-white">this listing</strong>?</p>
+          <p class="text-secondary small mb-0">Deactivating will immediately hide the product from public campus searches and the marketplace.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Active</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+            <span class="spinner-border spinner-border-sm me-1 d-none" id="deleteSpinner" role="status" aria-hidden="true"></span>
+            <span class="btn-label">Yes, Deactivate</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL: CONFIRM REACTIVATION (PATCH /api/products/:id status)   -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="reactivateProductModal" tabindex="-1" aria-labelledby="reactivateProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-modal text-light">
+        <div class="modal-header">
+          <h2 class="modal-title h5 fw-bold text-success d-flex align-items-center gap-2 mb-0" id="reactivateProductModalLabel">
+            <i class="bi bi-arrow-counterclockwise"></i> Reactivate Listing
+          </h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="reactivateModalAlert" class="alert d-none mb-3" role="alert"></div>
+          <p class="mb-2">Reactivate <strong id="reactivateProductTitleDisplay" class="text-white">this listing</strong>?</p>
+          <p class="text-secondary small mb-0">Once reactivated, students and campus buyers will immediately be able to discover and contact you for this item.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" id="confirmReactivateBtn">
+            <span class="spinner-border spinner-border-sm me-1 d-none" id="reactivateSpinner" role="status" aria-hidden="true"></span>
+            <span class="btn-label"><i class="bi bi-check-circle me-1"></i>Reactivate Listing</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ============================================================= -->
+  <!-- MODAL: PERMANENT REMOVE LISTING (DELETE /api/products/:id?permanent=true) -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="removeProductModal" tabindex="-1" aria-labelledby="removeProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-modal text-light">
+        <div class="modal-header">
+          <h2 class="modal-title h5 fw-bold text-danger d-flex align-items-center gap-2 mb-0" id="removeProductModalLabel">
+            <i class="bi bi-trash3-fill"></i> Remove Item Permanently
+          </h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="removeModalAlert" class="alert d-none mb-3" role="alert"></div>
+          <p class="mb-2">Are you sure you want to permanently remove <strong id="removeProductTitleDisplay" class="text-white">this listing</strong>?</p>
+          <div class="alert alert-danger bg-danger bg-opacity-10 border border-danger border-opacity-25 small mb-0">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            This will completely delete the product and its uploaded images from CampusSwap. This action cannot be undone.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmRemoveBtn">
+            <span class="spinner-border spinner-border-sm me-1 d-none" id="removeSpinner" role="status" aria-hidden="true"></span>
+            <span class="btn-label"><i class="bi bi-trash3 me-1"></i>Permanently Remove</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Seller Dashboard Controller Script -->
+  <script src="js/seller-dashboard.js"></script>
+</body>
+</html>
