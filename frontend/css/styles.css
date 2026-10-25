@@ -1,0 +1,119 @@
+:root {
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --bg-gradient-start: #0f172a;
+  --bg-gradient-end: #1e1b4b;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #312e81, transparent 40%),
+              radial-gradient(circle at bottom left, #1e1b4b, transparent 40%),
+              #0f172a;
+  color: #f8fafc;
+}
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(79, 70, 229, 0.15);
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.nav-pills .nav-link {
+  color: #94a3b8;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.form-control {
+  background-color: rgba(15, 23, 42, 0.7);
+  border: 1px solid #334155;
+  color: #f8fafc;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.9rem;
+}
+
+.form-control:focus {
+  background-color: rgba(15, 23, 42, 0.9);
+  border-color: #6366f1;
+  color: #f8fafc;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.form-control::placeholder {
+  color: #64748b;
+}
+
+.form-label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  margin-bottom: 0.35rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  border: none;
+  font-weight: 600;
+  border-radius: 0.65rem;
+  padding: 0.75rem;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+}
+
+.btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.alert {
+  border-radius: 0.65rem;
+  font-size: 0.875rem;
+  border: none;
+}
+
+.user-profile-badge {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}

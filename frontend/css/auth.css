@@ -1,0 +1,200 @@
+:root {
+  --cs-primary: #4f46e5;
+  --cs-primary-hover: #4338ca;
+  --cs-primary-light: #818cf8;
+  --cs-accent: #06b6d4;
+  --cs-success: #10b981;
+  --cs-danger: #f43f5e;
+  --cs-warning: #f59e0b;
+  --cs-bg-main: #0b0f19;
+  --cs-card-bg: rgba(17, 24, 39, 0.75);
+  --cs-card-border: rgba(255, 255, 255, 0.08);
+  --cs-input-bg: rgba(15, 23, 42, 0.8);
+  --cs-text-main: #f8fafc;
+  --cs-text-muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  background-color: var(--cs-bg-main);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.18) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.12) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: var(--cs-text-main);
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.glass-card {
+  background: var(--cs-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--cs-card-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 25px rgba(79, 70, 229, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 1.6rem;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+}
+
+.brand-title {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #ffffff, #cbd5e1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.form-label {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  margin-bottom: 0.35rem;
+}
+
+.form-label .required-star {
+  color: var(--cs-danger);
+}
+
+.input-group-text {
+  background-color: var(--cs-input-bg);
+  border: 1px solid #334155;
+  border-right: none;
+  color: var(--cs-text-muted);
+  border-top-left-radius: 0.65rem;
+  border-bottom-left-radius: 0.65rem;
+}
+
+.form-control {
+  background-color: var(--cs-input-bg);
+  border: 1px solid #334155;
+  color: var(--cs-text-main);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.input-group > .form-control {
+  border-left: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.form-control:focus {
+  background-color: rgba(15, 23, 42, 0.95);
+  border-color: var(--cs-primary-light);
+  color: var(--cs-text-main);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.input-group:focus-within .input-group-text {
+  border-color: var(--cs-primary-light);
+  color: var(--cs-primary-light);
+}
+
+.form-control::placeholder {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.password-toggle-btn {
+  background-color: var(--cs-input-bg);
+  border: 1px solid #334155;
+  border-left: none;
+  color: var(--cs-text-muted);
+  border-top-right-radius: 0.65rem;
+  border-bottom-right-radius: 0.65rem;
+  cursor: pointer;
+}
+
+.password-toggle-btn:hover {
+  color: var(--cs-text-main);
+}
+
+.btn-primary-action {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  border-radius: 0.65rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-primary-action:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+  color: #ffffff;
+}
+
+.btn-primary-action:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.alert {
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  border: none;
+}
+
+.user-profile-badge {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #334155;
+  border-radius: 0.85rem;
+  padding: 1.25rem;
+}
+
+.helper-text {
+  font-size: 0.75rem;
+  color: var(--cs-text-muted);
+  margin-top: 0.25rem;
+}
+
+.auth-nav-link {
+  color: #818cf8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.auth-nav-link:hover {
+  color: #c7d2fe;
+  text-decoration: underline;
+}
