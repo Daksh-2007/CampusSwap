@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace - CampusSwap</title>
+  <meta name="description"
+    content="Explore campus essentials for buy or rent on CampusSwap. Verified student-to-student marketplace for books, electronics, calculators, and dorm gear.">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- CampusSwap Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/marketplace.css">
+</head>
+
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark marketplace-nav sticky-top py-3">
+    <div class="container-fluid marketplace-container px-3 px-md-4">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="marketplace.html">
+        <div class="brand-badge" style="width: 40px; height: 40px; font-size: 1.25rem;">
+          <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <span class="fw-bold tracking-tight text-white fs-5">Campus<span class="text-primary">Swap</span></span>
+        <span
+          class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 ms-1">Marketplace</span>
+      </a>
+
+      <!-- Navbar Toggle for Mobile -->
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
+        data-bs-target="#marketplaceNavbar" aria-controls="marketplaceNavbar" aria-expanded="false"
+        aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="marketplaceNavbar">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <li class="nav-item">
+            <a class="nav-link active" href="marketplace.html"><i class="bi bi-shop me-1"></i> Browse Marketplace</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="seller-dashboard.html"><i class="bi bi-speedometer2 me-1"></i> Seller
+              Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="index.html"><i class="bi bi-person-badge me-1"></i> Auth Hub</a>
+          </li>
+        </ul>
+
+        <!-- Right Side Nav: Cart Trigger & Auth Actions -->
+        <div class="d-flex align-items-center gap-3">
+          <!-- Cart Button with dynamic badge -->
+          <button type="button" class="btn btn-outline-light position-relative px-3" data-bs-toggle="offcanvas"
+            data-bs-target="#cartOffcanvas" aria-controls="cartOffcanvas" id="openCartBtn">
+            <i class="bi bi-cart3 me-1"></i> Cart
+            <span
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary cart-counter-badge d-none"
+              id="cartBadgeCount">
+              0
+            </span>
+          </button>
+
+          <!-- Dynamic Auth State: Loading -->
+          <div id="authNavLoading" class="spinner-border spinner-border-sm text-secondary" role="status">
+            <span class="visually-hidden">Checking auth...</span>
+          </div>
+
+          <!-- Logged Out View -->
+          <div id="navLoggedOut" class="d-none d-flex align-items-center gap-2">
+            <a href="login.html" class="btn btn-outline-primary btn-sm px-3">Sign In</a>
+            <a href="register.html" class="btn btn-primary btn-sm px-3">Register</a>
+          </div>
+
+          <!-- Logged In View -->
+          <div id="navLoggedIn" class="d-none d-flex align-items-center gap-3">
+            <div class="d-none d-sm-block text-end">
+              <div id="navUserGreeting" class="fw-semibold text-white small">Student</div>
+              <div id="navUserEmail" class="text-secondary" style="font-size: 0.75rem;">...</div>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm" id="navLogoutBtn" title="Sign out">
+              <i class="bi bi-box-arrow-right me-1"></i>Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Marketplace Content -->
+  <main class="marketplace-container flex-grow-1 py-4 px-3 px-md-4">
+
+    <!-- Hero / Headline Section -->
+    <div class="marketplace-hero mb-4">
+      <div class="row align-items-center position-relative" style="z-index: 1;">
+        <div class="col-lg-8">
+          <span
+            class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 mb-2 px-3 py-1.5 rounded-pill">
+            <i class="bi bi-mortarboard-fill me-1"></i> Verified Student Marketplace
+          </span>
+          <h1 class="h2 fw-bold text-white mb-2">Buy & Rent College Essentials</h1>
+          <p class="text-secondary mb-0" style="max-width: 600px;">
+            Save money on textbooks, electronics, scientific calculators, dorm furniture, and lab gear from verified
+            students right on campus.
+          </p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+          <a href="seller-dashboard.html" class="btn btn-primary px-4 py-2 shadow-sm">
+            <i class="bi bi-tag-fill me-1"></i> List an Item to Sell / Rent
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Box for API or Network Notices -->
+    <div id="marketplaceAlert" class="alert alert-danger d-none mb-4" role="alert"></div>
+
+    <!-- Search & Filter Controls -->
+    <div class="glass-card p-3 p-md-4 mb-4">
+      <div class="row g-3 align-items-center">
+        <!-- Search Input -->
+        <div class="col-12 col-md-5 col-lg-5">
+          <form id="marketplaceSearchForm" class="m-0">
+            <div class="input-group">
+              <span class="input-group-text bg-transparent border-secondary text-secondary">
+                <i class="bi bi-search"></i>
+              </span>
+              <input type="text" class="form-control" id="marketplaceSearchInput"
+                placeholder="Search by title, author, or model..." autocomplete="off">
+              <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Listing Type Filter (Buy / Rent / Both) -->
+        <div class="col-6 col-md-3 col-lg-3">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-secondary text-secondary">
+              <i class="bi bi-funnel"></i>
+            </span>
+            <select class="form-select bg-dark text-light border-secondary" id="filterListingType">
+              <option value="all" selected>All Options (Buy & Rent)</option>
+              <option value="buy">Available to Buy</option>
+              <option value="rent">Available to Rent</option>
+              <option value="both">Both (Buy or Rent)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sorting Order -->
+        <div class="col-6 col-md-3 col-lg-3">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-secondary text-secondary">
+              <i class="bi bi-sort-down"></i>
+            </span>
+            <select class="form-select bg-dark text-light border-secondary" id="sortSelect">
+              <option value="created_at_desc" selected>Newest Listings</option>
+              <option value="created_at_asc">Oldest Listings</option>
+              <option value="sale_price_asc">Sale Price: Low to High</option>
+              <option value="sale_price_desc">Sale Price: High to Low</option>
+              <option value="rent_price_asc">Rental Rate: Low to High</option>
+              <option value="title_asc">Title: A to Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="col-12 col-md-1 col-lg-1 text-md-end">
+          <button type="button" class="btn btn-outline-secondary w-100" id="clearFiltersBtn" title="Reset all filters">
+            <i class="bi bi-x-circle"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div
+        class="d-flex align-items-center gap-2 mt-3 pt-3 border-top border-secondary border-opacity-25 overflow-x-auto pb-1"
+        id="categoryPillsContainer">
+        <!-- Dynamically generated category pills -->
+        <button type="button" class="category-pill active" data-category="all">All Items</button>
+      </div>
+    </div>
+
+    <!-- Active Listings Header & Count -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <h2 class="h5 fw-bold text-white mb-0">Active Campus Listings</h2>
+        <span class="badge bg-secondary bg-opacity-50 text-light" id="marketplaceCountBadge">0 active items</span>
+      </div>
+    </div>
+
+    <!-- Loading Spinner State -->
+    <div id="marketplaceLoading" class="text-center py-5 d-none">
+      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading marketplace catalog...</span>
+      </div>
+      <p class="text-secondary mt-3 small">Fetching active verified listings...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="marketplaceEmpty" class="glass-card text-center py-5 px-4 d-none">
+      <div class="stat-icon bg-secondary bg-opacity-25 text-secondary mx-auto mb-3"
+        style="width: 60px; height: 60px; font-size: 2rem;">
+        <i class="bi bi-search"></i>
+      </div>
+      <h3 class="h5 fw-semibold text-white mb-2">No active items match your criteria</h3>
+      <p class="text-secondary small mb-3" style="max-width: 480px; margin: 0 auto;">
+        Try adjusting your keywords, expanding your category filters, or be the first to list an item in this category!
+      </p>
+      <button type="button" class="btn btn-outline-primary btn-sm px-4" id="emptyStateResetBtn"
+        onclick="document.getElementById('clearFiltersBtn').click()">
+        Reset Filters
+      </button>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row g-4 d-none" id="productsGrid">
+      <!-- Dynamically filled with product cards -->
+    </div>
+
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- MODAL: PRODUCT DETAILS VIEW                                   -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="productDetailModal" tabindex="-1" aria-labelledby="detailModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content glass-modal text-light">
+        <div class="modal-header border-secondary border-opacity-25 pb-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25"
+              id="detailCategory">Category</span>
+            <span class="badge" id="detailCondition">Condition</span>
+            <span class="badge" id="detailListingType">Listing Type</span>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-4">
+            <!-- Left: Gallery -->
+            <div class="col-md-6">
+              <div id="detailMainImageContainer" class="mb-2">
+                <!-- Main image -->
+              </div>
+              <div id="detailThumbnailsContainer" class="d-flex gap-2 overflow-x-auto pb-1">
+                <!-- Extra thumbnails -->
+              </div>
+            </div>
+
+            <!-- Right: Details, Pricing & Description -->
+            <div class="col-md-6 d-flex flex-column">
+              <h2 class="h4 fw-bold text-white mb-2" id="detailModalTitle">Product Title</h2>
+
+              <div id="detailPricingContainer" class="mb-3">
+                <!-- Pricing details -->
+              </div>
+
+              <div
+                class="pickup-box p-3 rounded-3 bg-dark bg-opacity-50 border border-secondary border-opacity-25 mb-3 d-none">
+                <span class="text-secondary small fw-medium d-block mb-1">Campus Pickup Location:</span>
+                <div id="detailPickupAddress" class="small text-white"></div>
+              </div>
+
+              <div class="mb-4">
+                <h3 class="h6 fw-semibold text-secondary mb-1">Description</h3>
+                <div id="detailDescription" class="small text-light text-break"
+                  style="max-height: 180px; overflow-y: auto; white-space: pre-line;"></div>
+              </div>
+
+              <div class="mt-auto pt-3 border-top border-secondary border-opacity-25 d-flex gap-2"
+                id="detailActionContainer">
+                <!-- Dynamically populated Buy / Rent buttons -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL: RENTAL DURATION & ESTIMATED COST CALCULATOR            -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="rentalConfigModal" tabindex="-1" aria-labelledby="rentalModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content glass-modal text-light">
+        <div class="modal-header border-secondary border-opacity-25">
+          <h2 class="modal-title h5 fw-bold text-white d-flex align-items-center gap-2 mb-0" id="rentalModalTitle">
+            <i class="bi bi-calendar-range text-warning"></i> Configure Rental Period
+          </h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-secondary small mb-3">
+            Choose your rental start and return dates for <strong class="text-white"
+              id="rentalModalProductTitle">Item</strong>. Duration and total estimated rental fee calculate
+            automatically.
+          </p>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label for="rentalStartDate" class="form-label">Rental Start Date</label>
+              <input type="date" class="form-control" id="rentalStartDate" required>
+            </div>
+            <div class="col-6">
+              <label for="rentalEndDate" class="form-label">Return Date</label>
+              <input type="date" class="form-control" id="rentalEndDate" required>
+            </div>
+          </div>
+
+          <!-- Dynamic Duration & Price Calculation -->
+          <div class="rental-calc-box mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-secondary small">Daily Rental Rate:</span>
+              <span class="fw-semibold text-white" id="rentalModalDailyRate">₹0.00 / day</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-secondary small">Rental Duration:</span>
+              <span class="fw-bold text-warning" id="rentalDurationDays">0 days</span>
+            </div>
+            <div
+              class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary border-opacity-25">
+              <span class="fw-semibold text-white">Estimated Total Cost:</span>
+              <span class="fs-5 fw-bold text-info" id="rentalEstimatedCost">₹0.00</span>
+            </div>
+          </div>
+
+          <p class="text-secondary small mb-0" style="font-size: 0.75rem;">
+            <i class="bi bi-info-circle me-1"></i> Pickup and return arrangements are coordinated directly with the
+            student seller upon order confirmation.
+          </p>
+        </div>
+        <div class="modal-footer border-secondary border-opacity-25">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-warning px-4" id="confirmRentalAddToCartBtn">
+            <i class="bi bi-cart-plus me-1"></i> Add Rental to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- OFFCANVAS: PERSISTENT SHOPPING CART                           -->
+  <!-- ============================================================= -->
+  <div class="offcanvas offcanvas-end offcanvas-glass" tabindex="-1" id="cartOffcanvas"
+    aria-labelledby="cartOffcanvasLabel" style="width: 420px; max-width: 100vw;">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-25">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-cart3 fs-5 text-primary"></i>
+        <h2 class="offcanvas-title h5 fw-bold text-white mb-0" id="cartOffcanvasLabel">Your Campus Cart</h2>
+        <span class="badge bg-secondary bg-opacity-50 text-light ms-1" id="cartItemsCountLabel">0 items</span>
+      </div>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <div class="offcanvas-body p-3">
+      <!-- Empty Cart State -->
+      <div id="cartEmptyState" class="text-center py-5">
+        <div class="stat-icon bg-secondary bg-opacity-25 text-secondary mx-auto mb-3"
+          style="width: 60px; height: 60px; font-size: 2rem;">
+          <i class="bi bi-bag-x"></i>
+        </div>
+        <h3 class="h6 fw-semibold text-white mb-1">Your cart is empty</h3>
+        <p class="text-secondary small mb-3">Browse textbooks, electronics, or lab gear to start shopping or renting.
+        </p>
+        <button type="button" class="btn btn-primary btn-sm px-4" data-bs-dismiss="offcanvas">
+          Browse Marketplace
+        </button>
+      </div>
+
+      <!-- Cart Line Items Container -->
+      <div id="cartItemsContainer" class="d-none">
+        <!-- Dynamically rendered cart cards -->
+      </div>
+    </div>
+
+    <!-- Cart Footer with Totals -->
+    <div class="p-3 border-top border-secondary border-opacity-25 bg-dark bg-opacity-50 d-none" id="cartFooter">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-secondary small">Total Estimated Cost:</span>
+        <span class="fs-4 fw-bold text-info" id="cartSubtotal">₹0.00</span>
+      </div>
+      <p class="text-secondary small mb-3" style="font-size: 0.75rem;">
+        Tax & pickup fees calculated per campus policies. No online payment required for MVP reservation.
+      </p>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-danger btn-sm" id="clearCartBtn" title="Clear all items">
+          <i class="bi bi-trash"></i> Clear
+        </button>
+        <button type="button" class="btn btn-primary flex-grow-1" id="checkoutBtn">
+          <i class="bi bi-check2-circle me-1"></i> Proceed to Reservation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 2000;"></div>
+
+  <!-- Footer -->
+  <footer class="mt-auto py-3 border-top border-secondary border-opacity-25 text-center text-secondary small">
+    <div class="marketplace-container">
+      CampusSwap &bull; Student-to-Student College Marketplace &bull;
+      <a href="index.html" class="text-info text-decoration-none">Auth Hub</a> &bull;
+      <a href="seller-dashboard.html" class="text-info text-decoration-none">Seller Dashboard</a>
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Marketplace Logic -->
+  <script src="js/marketplace.js"></script>
+</body>
+
+</html>
