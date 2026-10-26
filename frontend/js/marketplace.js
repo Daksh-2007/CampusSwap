@@ -608,7 +608,7 @@ function renderProductCards(products) {
     if (canBuy) {
       actionsHtml += `
         <button type="button" class="btn btn-primary btn-sm flex-grow-1 btn-add-buy" data-id="${p.id}" title="Add to cart for purchase">
-          <i class="bi bi-cart-plus me-1"></i> Buy
+          <i class="bi bi-cart-plus me-1"></i> Add To Cart
         </button>
       `;
     }
