@@ -48,11 +48,15 @@ function setLoading(button, spinner, textSpan, isLoading, defaultText) {
   }
 }
 
+function getAppStoredToken() {
+  return sessionStorage.getItem('campus_swap_token') || localStorage.getItem('campus_swap_token');
+}
+
 /**
  * Check existing session storage on page load and verify with GET /api/me
  */
 async function checkAuthStatus() {
-  const token = sessionStorage.getItem('campus_swap_token');
+  const token = getAppStoredToken();
   if (!token) {
     showLoggedOutView();
     return;
@@ -73,6 +77,7 @@ async function checkAuthStatus() {
     } else {
       // Token is invalid/expired
       sessionStorage.removeItem('campus_swap_token');
+      localStorage.removeItem('campus_swap_token');
       showLoggedOutView();
     }
   } catch (err) {
@@ -146,6 +151,7 @@ registerForm.addEventListener('submit', async (e) => {
       } else if (data.session && data.session.access_token) {
         // Immediate session provided
         sessionStorage.setItem('campus_swap_token', data.session.access_token);
+        localStorage.setItem('campus_swap_token', data.session.access_token);
         showAlert('Registration successful! Fetching user profile...', 'success');
         await checkAuthStatus();
         return;
@@ -200,8 +206,9 @@ loginForm.addEventListener('submit', async (e) => {
     const data = await response.json();
 
     if (response.ok && data.success && data.session?.access_token) {
-      // Store token safely in sessionStorage
+      // Store token safely in sessionStorage and localStorage
       sessionStorage.setItem('campus_swap_token', data.session.access_token);
+      localStorage.setItem('campus_swap_token', data.session.access_token);
       showAlert('Sign in successful! Loading your account...', 'success');
       
       loginForm.reset();
@@ -230,6 +237,7 @@ loginForm.addEventListener('submit', async (e) => {
  */
 logoutBtn.addEventListener('click', () => {
   sessionStorage.removeItem('campus_swap_token');
+  localStorage.removeItem('campus_swap_token');
   clearAlert();
   showLoggedOutView();
   showAlert('You have been logged out.', 'info');
@@ -240,7 +248,7 @@ logoutBtn.addEventListener('click', () => {
  */
 refreshMeBtn.addEventListener('click', async () => {
   clearAlert();
-  const token = sessionStorage.getItem('campus_swap_token');
+  const token = getAppStoredToken();
   if (!token) {
     showAlert('No token found in session storage. Please log in first.', 'warning');
     showLoggedOutView();

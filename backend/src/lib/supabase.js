@@ -25,6 +25,7 @@ function validateSupabaseConfig() {
  * Used for verifying auth tokens without administrative privileges.
  */
 let supabase = null;
+let adminSupabase = null;
 
 function getSupabaseClient() {
   if (!supabase) {
@@ -37,6 +38,27 @@ function getSupabaseClient() {
     });
   }
   return supabase;
+}
+
+/**
+ * Returns a Supabase admin client initialized with the SUPABASE_SECRET_KEY (service role).
+ * Used strictly on the backend after performing application-level auth and authorization checks.
+ */
+function getAdminClient() {
+  const secretKey = (process.env.SUPABASE_SECRET_KEY || '').trim();
+  if (!secretKey) {
+    return null;
+  }
+  if (!adminSupabase) {
+    validateSupabaseConfig();
+    adminSupabase = createClient(supabaseUrl, secretKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+  }
+  return adminSupabase;
 }
 
 /**
@@ -63,6 +85,7 @@ function createScopedSupabaseClient(accessToken) {
 
 module.exports = {
   getSupabaseClient,
+  getAdminClient,
   createScopedSupabaseClient,
   validateSupabaseConfig,
 };

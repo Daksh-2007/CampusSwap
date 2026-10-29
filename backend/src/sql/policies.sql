@@ -190,3 +190,118 @@ USING (
 -- Do NOT grant seller role to all users. For local MVP testing, an administrator
 -- may promote a specific user's profile manually after verifying their identity:
 -- UPDATE public.profiles SET role = 'seller' WHERE id = '<verified-auth-user-uuid>';
+
+-- ==============================================================================
+-- Buy and Rental Requests RLS Policies
+-- ==============================================================================
+
+-- 1. Orders
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Buyers can create own orders" ON public.orders;
+DROP POLICY IF EXISTS "Buyers can view own orders" ON public.orders;
+DROP POLICY IF EXISTS "Sellers can view orders containing their items" ON public.orders;
+DROP POLICY IF EXISTS "Sellers can update order status for their items" ON public.orders;
+
+CREATE POLICY "Buyers can create own orders"
+ON public.orders
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = buyer_id);
+
+CREATE POLICY "Buyers can view own orders"
+ON public.orders
+FOR SELECT
+TO authenticated
+USING (auth.uid() = buyer_id);
+
+CREATE POLICY "Sellers can view orders containing their items"
+ON public.orders
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.order_items oi
+    WHERE oi.order_id = orders.id
+      AND oi.seller_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Sellers can update order status for their items"
+ON public.orders
+FOR UPDATE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.order_items oi
+    WHERE oi.order_id = orders.id
+      AND oi.seller_id = auth.uid()
+  )
+);
+
+-- 2. Order Items
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Buyers can insert order items for own order" ON public.order_items;
+DROP POLICY IF EXISTS "Buyers can view items for own order" ON public.order_items;
+DROP POLICY IF EXISTS "Sellers can view incoming order items" ON public.order_items;
+
+CREATE POLICY "Buyers can insert order items for own order"
+ON public.order_items
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.orders o
+    WHERE o.id = order_items.order_id
+      AND o.buyer_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Buyers can view items for own order"
+ON public.order_items
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.orders o
+    WHERE o.id = order_items.order_id
+      AND o.buyer_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Sellers can view incoming order items"
+ON public.order_items
+FOR SELECT
+TO authenticated
+USING (seller_id = auth.uid());
+
+-- 3. Rental Requests
+ALTER TABLE public.rental_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Renters can create rental requests" ON public.rental_requests;
+DROP POLICY IF EXISTS "Renters can view own rental requests" ON public.rental_requests;
+DROP POLICY IF EXISTS "Sellers can view incoming rental requests" ON public.rental_requests;
+DROP POLICY IF EXISTS "Sellers can update incoming rental requests" ON public.rental_requests;
+
+CREATE POLICY "Renters can create rental requests"
+ON public.rental_requests
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = renter_id);
+
+CREATE POLICY "Renters can view own rental requests"
+ON public.rental_requests
+FOR SELECT
+TO authenticated
+USING (auth.uid() = renter_id);
+
+CREATE POLICY "Sellers can view incoming rental requests"
+ON public.rental_requests
+FOR SELECT
+TO authenticated
+USING (seller_id = auth.uid());
+
+CREATE POLICY "Sellers can update incoming rental requests"
+ON public.rental_requests
+FOR UPDATE
+TO authenticated
+USING (seller_id = auth.uid());
+

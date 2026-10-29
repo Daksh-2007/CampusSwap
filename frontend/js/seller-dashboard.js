@@ -26,10 +26,15 @@ let removeProductModal = null;
 let targetRemoveId = null;
 
 /**
- * Retrieve session token from sessionStorage
+ * Retrieve session token from sessionStorage or localStorage
  */
 function getStoredToken() {
-  return sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(LEGACY_TOKEN_KEY);
+  return (
+    sessionStorage.getItem(TOKEN_KEY) ||
+    sessionStorage.getItem(LEGACY_TOKEN_KEY) ||
+    localStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem(LEGACY_TOKEN_KEY)
+  );
 }
 
 /**
@@ -68,6 +73,8 @@ function clearDashboardAlert() {
 function handleAuthExpiry(message = 'Your session has expired. Please sign in again.') {
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
   showDashboardAlert(`<strong>Session Expired:</strong> ${message} <a href="login.html" class="btn btn-sm btn-outline-light ms-2">Sign In</a>`, 'warning');
   
   const spinner = document.getElementById('loadingSpinner');
@@ -522,11 +529,11 @@ async function handleCreateProduct(e) {
     showModalAlert(alertEl, 'Category is required.');
     return;
   }
-  if ((listing_type === 'buy' || listing_type === 'both') && (!sale_price || Number(sale_price) < 0)) {
+  if ((listing_type === 'buy' || listing_type === 'both') && (!sale_price || isNaN(Number(sale_price)) || Number(sale_price) < 0)) {
     showModalAlert(alertEl, 'Valid sale price is required for buy listings.');
     return;
   }
-  if ((listing_type === 'rent' || listing_type === 'both') && (!rent_price_per_day || Number(rent_price_per_day) < 0)) {
+  if ((listing_type === 'rent' || listing_type === 'both') && (!rent_price_per_day || isNaN(Number(rent_price_per_day)) || Number(rent_price_per_day) < 0)) {
     showModalAlert(alertEl, 'Valid daily rental price is required for rent listings.');
     return;
   }
@@ -555,7 +562,8 @@ async function handleCreateProduct(e) {
 
   const token = getStoredToken();
   if (!token) {
-    handleAuthExpiry();
+    showModalAlert(alertEl, 'Please sign in to your seller account before creating a listing.', 'danger');
+    handleAuthExpiry('No active session found.');
     return;
   }
 
@@ -592,7 +600,9 @@ async function handleCreateProduct(e) {
     form.reset();
     document.getElementById('createImagePreviews').innerHTML = '';
     const modalEl = document.getElementById('createProductModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
+    const modal = (typeof bootstrap !== 'undefined' && bootstrap?.Modal)
+      ? (bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl))
+      : null;
     if (modal) modal.hide();
 
     showDashboardAlert(`<strong>Success!</strong> Listing "<strong>${escapeHtml(json.data.title)}</strong>" was created successfully.`, 'success', 5000);
@@ -1001,8 +1011,11 @@ async function handleConfirmRemove() {
  */
 function showModalAlert(alertEl, message, type = 'danger') {
   if (!alertEl) return;
-  alertEl.className = `alert alert-${type} d-block`;
+  alertEl.className = `alert alert-${type} d-block mb-3`;
   alertEl.innerHTML = message;
+  if (typeof alertEl.scrollIntoView === 'function') {
+    alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 /**
@@ -1025,6 +1038,8 @@ function setBtnLoading(button, spinner, isLoading, text) {
 function handleSignOut() {
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
   window.location.href = 'login.html';
 }
 
@@ -1077,6 +1092,191 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Authenticate and load initial products
   const authenticated = await loadUserProfile();
   if (authenticated) {
-    await loadSellerProducts();
+    await Promise.all([
+      loadSellerProducts(),
+      loadIncomingRequests()
+    ]);
+  }
+
+  // Refresh requests button
+  const refreshRequestsBtn = document.getElementById('refreshRequestsBtn');
+  if (refreshRequestsBtn) {
+    refreshRequestsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      loadIncomingRequests();
+    });
   }
 });
+
+// ============================================================================
+// INCOMING REQUESTS LOGIC
+// ============================================================================
+async function loadIncomingRequests() {
+  const token = getStoredToken();
+  const loadingEl = document.getElementById('requestsLoadingSpinner');
+  const emptyEl = document.getElementById('requestsEmptyState');
+  const tableContainer = document.getElementById('requestsTableContainer');
+  const tableBody = document.getElementById('requestsTableBody');
+  const badgeEl = document.getElementById('incomingRequestsCountBadge');
+
+  if (!token || !tableBody) return;
+
+  if (loadingEl) loadingEl.classList.remove('d-none');
+  if (emptyEl) emptyEl.classList.add('d-none');
+  if (tableContainer) tableContainer.classList.add('d-none');
+  tableBody.innerHTML = '';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/requests/seller`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Failed to fetch incoming requests.');
+    }
+
+    const items = data.data?.all || [];
+    const pendingCount = items.filter(i => i.status === 'pending').length;
+
+    if (badgeEl) {
+      badgeEl.textContent = pendingCount;
+      if (pendingCount > 0) {
+        badgeEl.className = 'badge bg-warning text-dark ms-1';
+      } else {
+        badgeEl.className = 'badge bg-secondary ms-1';
+      }
+    }
+
+    if (loadingEl) loadingEl.classList.add('d-none');
+
+    if (items.length === 0) {
+      if (emptyEl) emptyEl.classList.remove('d-none');
+      return;
+    }
+
+    if (tableContainer) tableContainer.classList.remove('d-none');
+
+    items.forEach(req => {
+      const isRent = req.type === 'rent';
+      const isPending = req.status === 'pending';
+      const isAccepted = req.status === 'accepted';
+      const isRejected = req.status === 'rejected';
+
+      let statusBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pending</span>';
+      if (isAccepted) {
+        statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Accepted</span>';
+      } else if (isRejected) {
+        statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>';
+      }
+
+      let typeBadge = isRent
+        ? '<span class="badge badge-type-rent"><i class="bi bi-clock-history me-1"></i>Rental</span>'
+        : '<span class="badge badge-type-buy"><i class="bi bi-tag-fill me-1"></i>Direct Buy</span>';
+
+      let termsHtml = '';
+      if (isRent) {
+        termsHtml = `<span class="small text-secondary">${escapeHtml(req.startDate)} &rarr; ${escapeHtml(req.endDate)}</span>`;
+      } else {
+        termsHtml = `<span class="small text-secondary">Qty: ${req.quantity}</span>`;
+      }
+
+      let actionsHtml = '';
+      if (isPending) {
+        actionsHtml = `
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-sm btn-success accept-request-btn" data-type="${req.type}" data-id="${req.id}">
+              <i class="bi bi-check-lg me-1"></i>Accept
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger reject-request-btn" data-type="${req.type}" data-id="${req.id}">
+              <i class="bi bi-x-lg me-1"></i>Reject
+            </button>
+          </div>
+        `;
+      } else {
+        actionsHtml = `<span class="small text-secondary fst-italic">Decision finalized</span>`;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <div>
+              <div class="fw-semibold text-white">${escapeHtml(req.productTitle)}</div>
+              <div class="text-secondary small">ID: ${req.productId.slice(0, 8)}...</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="text-light fw-medium small">${escapeHtml(req.requesterName)}</div>
+        </td>
+        <td>
+          <div>${typeBadge}</div>
+          <div class="mt-1">${termsHtml}</div>
+        </td>
+        <td>
+          <div class="fw-bold text-info">${formatPrice(req.totalAmount)}</div>
+        </td>
+        <td>${statusBadge}</td>
+        <td class="text-end">${actionsHtml}</td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+    // Wire up accept / reject action buttons
+    tableBody.querySelectorAll('.accept-request-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        handleRequestAction(btn.getAttribute('data-type'), btn.getAttribute('data-id'), 'accept', btn);
+      });
+    });
+
+    tableBody.querySelectorAll('.reject-request-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        handleRequestAction(btn.getAttribute('data-type'), btn.getAttribute('data-id'), 'reject', btn);
+      });
+    });
+
+  } catch (err) {
+    console.error('Error loading incoming requests:', err);
+    if (loadingEl) loadingEl.classList.add('d-none');
+    if (emptyEl) {
+      emptyEl.classList.remove('d-none');
+      emptyEl.querySelector('p').textContent = 'Error loading requests. Please try refreshing.';
+    }
+  }
+}
+
+async function handleRequestAction(type, id, action, btnEl) {
+  const token = getStoredToken();
+  if (!token) return;
+
+  const originalText = btnEl.innerHTML;
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/requests/${type}/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ action })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || `Failed to ${action} request.`);
+    }
+
+    showGlobalAlert(`Request ${action === 'accept' ? 'accepted' : 'rejected'} successfully.`, 'success');
+    await loadIncomingRequests();
+  } catch (err) {
+    console.error(`Error performing ${action} on request:`, err);
+    showGlobalAlert(err.message || 'Action failed.', 'danger');
+    btnEl.disabled = false;
+    btnEl.innerHTML = originalText;
+  }
+}

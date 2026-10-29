@@ -9,7 +9,12 @@ const TOKEN_KEY = 'campus_swap_token';
 const LEGACY_TOKEN_KEY = 'campus_swap_access_token';
 
 function getStoredToken() {
-  return sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(LEGACY_TOKEN_KEY);
+  return (
+    sessionStorage.getItem(TOKEN_KEY) ||
+    sessionStorage.getItem(LEGACY_TOKEN_KEY) ||
+    localStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem(LEGACY_TOKEN_KEY)
+  );
 }
 
 // Email validation regular expression
@@ -295,6 +300,8 @@ function initLoginPage() {
       // Token invalid or expired
       sessionStorage.removeItem(TOKEN_KEY);
       sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
       clearAlert(alertEl);
       showLoginForm();
     }
@@ -317,6 +324,8 @@ function initLoginPage() {
     logoutBtn.addEventListener('click', () => {
       sessionStorage.removeItem(TOKEN_KEY);
       sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
       showLoginForm();
       showAlert(alertEl, 'You have been signed out successfully.', 'info');
     });
@@ -361,9 +370,10 @@ function initLoginPage() {
       }));
 
       if (response.ok && data.success && data.session?.access_token) {
-        // 1. Store access token in sessionStorage
+        // 1. Store access token in sessionStorage and localStorage
         const token = data.session.access_token;
         sessionStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(TOKEN_KEY, token);
 
         showAlert(alertEl, '<span class="spinner-border spinner-border-sm me-1"></span> Authentication successful! Loading profile...', 'success');
 

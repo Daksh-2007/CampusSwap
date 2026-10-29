@@ -84,6 +84,9 @@
 
           <!-- Logged In View -->
           <div id="navLoggedIn" class="d-none d-flex align-items-center gap-3">
+            <button type="button" class="btn btn-outline-info btn-sm position-relative" id="myRequestsNavBtn" data-bs-toggle="modal" data-bs-target="#buyerRequestsModal">
+              <i class="bi bi-clock-history me-1"></i> My Requests
+            </button>
             <div class="d-none d-sm-block text-end">
               <div id="navUserGreeting" class="fw-semibold text-white small">Student</div>
               <div id="navUserEmail" class="text-secondary" style="font-size: 0.75rem;">...</div>
@@ -344,6 +347,46 @@
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="button" class="btn btn-warning px-4" id="confirmRentalAddToCartBtn">
             <i class="bi bi-cart-plus me-1"></i> Add Rental to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL: BUYER REQUESTS & RESERVATIONS STATUS                   -->
+  <!-- ============================================================= -->
+  <div class="modal fade" id="buyerRequestsModal" tabindex="-1" aria-labelledby="buyerRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-dark text-light border-secondary">
+        <div class="modal-header border-secondary border-opacity-25">
+          <h2 class="modal-title h5 text-white mb-0" id="buyerRequestsModalLabel">
+            <i class="bi bi-clock-history text-info me-2"></i>My Requests & Reservations
+          </h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div id="buyerRequestsLoading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading requests...</span>
+            </div>
+            <p class="text-secondary small mt-2">Loading your submitted requests...</p>
+          </div>
+
+          <div id="buyerRequestsEmpty" class="text-center py-4 d-none">
+            <i class="bi bi-inbox text-secondary fs-1 d-block mb-2"></i>
+            <h3 class="h6 text-white mb-1">No requests yet</h3>
+            <p class="text-secondary small">Add items to your cart and request to buy or rent them from student sellers.</p>
+          </div>
+
+          <div id="buyerRequestsList" class="d-flex flex-column gap-3 d-none">
+            <!-- Dynamically populated requests -->
+          </div>
+        </div>
+        <div class="modal-footer border-secondary border-opacity-25">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-outline-info btn-sm" id="refreshBuyerRequestsBtn">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
           </button>
         </div>
       </div>

@@ -4,6 +4,7 @@ const cors = require('cors');
 const { requireAuth } = require('./middleware/auth');
 const authRouter = require('./routes/auth');
 const productsRouter = require('./routes/products');
+const requestsRouter = require('./routes/requests');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,9 @@ app.use('/api/auth', authRouter);
 
 // Product marketplace routes (/api/products)
 app.use('/api/products', productsRouter);
+
+// Buy and rental request routes (/api/requests)
+app.use('/api/requests', requestsRouter);
 
 // Protected user profile endpoint
 app.get('/api/me', requireAuth, (req, res) => {

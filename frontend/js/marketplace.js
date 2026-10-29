@@ -29,7 +29,12 @@ let currentRentalTarget = null; // For date modal configuration
 
 // Utility: Token retrieval
 function getStoredToken() {
-  return sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(LEGACY_TOKEN_KEY);
+  return (
+    sessionStorage.getItem(TOKEN_KEY) ||
+    sessionStorage.getItem(LEGACY_TOKEN_KEY) ||
+    localStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem(LEGACY_TOKEN_KEY)
+  );
 }
 
 // Utility: Format currency (e.g. ₹)
@@ -1043,10 +1048,10 @@ function setupFiltersAndSearch() {
     });
   }
 
-  // Checkout button notice (per MVP requirements: no payment gateway yet)
+  // Checkout button handler: submits buy & rent requests persistently to backend
   const checkoutBtn = document.getElementById('checkoutBtn');
   if (checkoutBtn) {
-    checkoutBtn.addEventListener('click', () => {
+    checkoutBtn.addEventListener('click', async () => {
       const token = getStoredToken();
       if (!token) {
         showToastNotification('Please sign in to proceed with your order reservation!', 'warning');
@@ -1056,8 +1061,218 @@ function setupFiltersAndSearch() {
         return;
       }
 
-      showToastNotification('Ready for reservation! Order placement & payment processing will be finalized in the next milestone.', 'info');
+      const cart = getCart();
+      if (cart.length === 0) {
+        showToastNotification('Your cart is currently empty.', 'warning');
+        return;
+      }
+
+      checkoutBtn.disabled = true;
+      checkoutBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Submitting...';
+
+      try {
+        const payload = {
+          items: cart.map(item => ({
+            productId: item.productId,
+            mode: item.mode,
+            quantity: item.quantity || 1,
+            rentalStartDate: item.rentalStartDate || null,
+            rentalEndDate: item.rentalEndDate || null,
+            rentalDays: item.rentalDays || null,
+            estimatedCost: item.totalEstimatedCost || item.pricePerUnit
+          }))
+        };
+
+        const res = await fetch(`${API_BASE_URL}/requests`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to submit request.');
+        }
+
+        // Successfully created requests
+        clearCart();
+        showToastNotification('Reservation requests submitted to sellers!', 'success');
+
+        // Hide cart offcanvas
+        const offcanvasEl = document.getElementById('cartOffcanvas');
+        if (offcanvasEl) {
+          const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+          if (bsOffcanvas) bsOffcanvas.hide();
+        }
+
+        // Open My Requests modal to show status
+        setTimeout(() => {
+          openBuyerRequestsModal();
+        }, 400);
+      } catch (err) {
+        console.error('Checkout error:', err);
+        showToastNotification(err.message || 'An error occurred during reservation submission.', 'danger');
+      } finally {
+        checkoutBtn.disabled = false;
+        checkoutBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Proceed to Reservation';
+      }
     });
+  }
+
+  // My Requests navigation button & refresh button
+  const myRequestsNavBtn = document.getElementById('myRequestsNavBtn');
+  if (myRequestsNavBtn) {
+    myRequestsNavBtn.addEventListener('click', () => {
+      loadBuyerRequests();
+    });
+  }
+
+  const refreshBuyerRequestsBtn = document.getElementById('refreshBuyerRequestsBtn');
+  if (refreshBuyerRequestsBtn) {
+    refreshBuyerRequestsBtn.addEventListener('click', () => {
+      loadBuyerRequests();
+    });
+  }
+}
+
+// ============================================================================
+// BUYER REQUESTS MODAL WORKFLOW
+// ============================================================================
+function openBuyerRequestsModal() {
+  const modalEl = document.getElementById('buyerRequestsModal');
+  if (!modalEl) return;
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+  loadBuyerRequests();
+}
+
+async function loadBuyerRequests() {
+  const token = getStoredToken();
+  const loadingEl = document.getElementById('buyerRequestsLoading');
+  const emptyEl = document.getElementById('buyerRequestsEmpty');
+  const listEl = document.getElementById('buyerRequestsList');
+
+  if (!loadingEl || !emptyEl || !listEl) return;
+
+  if (!token) {
+    loadingEl.classList.add('d-none');
+    listEl.classList.add('d-none');
+    emptyEl.classList.remove('d-none');
+    emptyEl.querySelector('p').textContent = 'Please log in to view your requests.';
+    return;
+  }
+
+  loadingEl.classList.remove('d-none');
+  emptyEl.classList.add('d-none');
+  listEl.classList.add('d-none');
+  listEl.innerHTML = '';
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/requests/buyer`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Failed to fetch requests');
+    }
+
+    const items = data.data?.all || [];
+    loadingEl.classList.add('d-none');
+
+    if (items.length === 0) {
+      emptyEl.classList.remove('d-none');
+      return;
+    }
+
+    listEl.classList.remove('d-none');
+
+    items.forEach(req => {
+      const isRent = req.type === 'rent';
+      const isAccepted = req.status === 'accepted';
+      const isRejected = req.status === 'rejected';
+
+      let statusBadge = '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pending</span>';
+      if (isAccepted) {
+        statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Accepted</span>';
+      } else if (isRejected) {
+        statusBadge = '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>';
+      }
+
+      let typeBadge = isRent
+        ? '<span class="badge badge-type-rent"><i class="bi bi-clock-history me-1"></i>Rental</span>'
+        : '<span class="badge badge-type-buy"><i class="bi bi-tag-fill me-1"></i>Purchase</span>';
+
+      let detailsHtml = '';
+      if (isRent) {
+        detailsHtml = `
+          <div class="text-secondary small mt-1">
+            <span><strong>Dates:</strong> ${escapeHtml(req.startDate)} to ${escapeHtml(req.endDate)}</span> &bull; 
+            <span><strong>Est. Total:</strong> ${formatPrice(req.totalAmount)}</span>
+          </div>
+        `;
+      } else {
+        detailsHtml = `
+          <div class="text-secondary small mt-1">
+            <span><strong>Qty:</strong> ${req.quantity}</span> &bull; 
+            <span><strong>Total:</strong> ${formatPrice(req.totalAmount)}</span>
+          </div>
+        `;
+      }
+
+      // Show pickup details ONLY after seller acceptance
+      let pickupHtml = '';
+      if (isAccepted) {
+        pickupHtml = `
+          <div class="alert alert-success bg-opacity-10 border border-success border-opacity-25 mt-2 mb-0 py-2 px-3 small">
+            <div class="fw-bold text-success mb-1">
+              <i class="bi bi-geo-alt-fill me-1"></i> Pickup Location:
+            </div>
+            <div class="text-white">${escapeHtml(req.pickupAddress || 'Please contact the seller on campus for final handover location.')}</div>
+          </div>
+        `;
+      } else if (isRejected) {
+        pickupHtml = `
+          <div class="text-secondary small mt-2 fst-italic">
+            <i class="bi bi-info-circle me-1"></i> This request was declined by the seller.
+          </div>
+        `;
+      } else {
+        pickupHtml = `
+          <div class="text-secondary small mt-2 fst-italic">
+            <i class="bi bi-shield-lock me-1"></i> Pickup details will be revealed once the seller accepts your request.
+          </div>
+        `;
+      }
+
+      const itemCard = document.createElement('div');
+      itemCard.className = 'glass-card p-3 border border-secondary border-opacity-25 rounded';
+      itemCard.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              ${typeBadge}
+              ${statusBadge}
+            </div>
+            <h4 class="h6 fw-bold text-white mb-0">${escapeHtml(req.title)}</h4>
+            ${detailsHtml}
+          </div>
+          <div class="text-end text-secondary" style="font-size: 0.75rem;">
+            ${new Date(req.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+        ${pickupHtml}
+      `;
+      listEl.appendChild(itemCard);
+    });
+  } catch (err) {
+    console.error('Error loading buyer requests:', err);
+    loadingEl.classList.add('d-none');
+    emptyEl.classList.remove('d-none');
+    emptyEl.querySelector('p').textContent = 'Unable to load requests. Please try again.';
   }
 }
 
