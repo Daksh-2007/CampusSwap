@@ -1,4 +1,5 @@
-require('dotenv').config();
+// Load .env from the backend folder regardless of working directory
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const express = require('express');
 const cors = require('cors');
 const { requireAuth } = require('./middleware/auth');
@@ -8,12 +9,33 @@ const requestsRouter = require('./routes/requests');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:5500').trim();
 
-// Enable CORS for local frontend development
+// Normalize and parse allowed origins from FRONTEND_URL (supports comma-separated URLs)
+// Always include localhost:5500 and 127.0.0.1:5500 for local development.
+const defaultLocalOrigins = ['http://localhost:5500', 'http://127.0.0.1:5500'];
+const configuredOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(url => url.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...defaultLocalOrigins, ...configuredOrigins]));
+
+// Dynamic CORS origin validator: allows requests only from explicitly configured origins
 app.use(cors({
-  origin: [FRONTEND_URL, 'http://127.0.0.1:5500', 'http://localhost:5500'],
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow non-browser requests (e.g. mobile apps, curl, server-to-server, Render health check probes)
+    if (!origin) {
+      return callback(null, true);
+    }
+    const normalizedOrigin = origin.trim().replace(/\/+$/, '');
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS policy rejection: Origin "${origin}" is not allowed`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Express body parsers

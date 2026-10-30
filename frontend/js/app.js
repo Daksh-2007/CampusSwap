@@ -1,5 +1,5 @@
-// Base API URL
-const API_BASE = 'http://localhost:5000/api';
+// Shared Base API URL (falls back to localhost:5000/api if config.js is not loaded)
+const API_BASE = window.CAMPUS_SWAP_API_URL || 'http://localhost:5000/api';
 
 // DOM Elements
 const authAlert = document.getElementById('authAlert');
@@ -288,7 +288,7 @@ checkHealthLink.addEventListener('click', async (e) => {
   e.preventDefault();
   healthStatusBadge.innerHTML = '<span class="spinner-border spinner-border-sm text-info"></span> Checking...';
   try {
-    const res = await fetch('http://localhost:5000/api/health');
+    const res = await fetch(`${API_BASE}/health`);
     const data = await res.json();
     if (res.ok && data.success) {
       healthStatusBadge.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Online: ${data.message}</span>`;
@@ -296,7 +296,7 @@ checkHealthLink.addEventListener('click', async (e) => {
       healthStatusBadge.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> Offline or unexpected response</span>`;
     }
   } catch (err) {
-    healthStatusBadge.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> Cannot connect to http://localhost:5000</span>`;
+    healthStatusBadge.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> Cannot connect to ${API_BASE}</span>`;
   }
 });
 
